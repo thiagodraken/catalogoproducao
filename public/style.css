@@ -1,0 +1,84 @@
+/* Centraliza o botão principal e adiciona margem */
+.text-center {
+    text-align: center;
+}
+
+/* Espaçamento entre os botões de ação na lista */
+.list-group-item .btn {
+    margin-left: 5px;
+}
+
+/* Feedback visual para o status da API */
+#api-status.success {
+    color: green;
+    font-weight: bold;
+}
+
+#api-status.error {
+    color: red;
+    font-weight: bold;
+}
+
+/* Estilo da área de Drag and Drop */
+.drop-zone {
+    border: 2px dashed #ccc;
+    border-radius: 10px;
+    padding: 40px;
+    text-align: center;
+    color: #aaa;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+.drop-zone:hover {
+    background-color: #f9f9f9;
+    border-color: #999;
+}
+
+/* Estilo quando um arquivo está sendo arrastado sobre a área */
+.drop-zone--over {
+    border-style: solid;
+    border-color: #0d6efd; /* Azul do Bootstrap */
+    background-color: #e9f5ff;
+}
+
+/* Container para as pré-visualizações */
+#image-previews {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+/* Estilo de cada imagem de pré-visualização */
+.preview-item {
+    position: relative;
+    width: 100px;
+    height: 100px;
+}
+
+.preview-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+}
+
+/* Botão para remover a imagem da pré-visualização */
+.preview-remove-btn {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    width: 20px;
+    height: 20px;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    line-height: 1;
+}
