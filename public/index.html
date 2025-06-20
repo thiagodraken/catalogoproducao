@@ -17,6 +17,8 @@
         <div id="product-form-container" class="card card-body mb-4" style="display: none;">
             <h3 id="form-title">Adicionar Produto</h3>
             <form id="product-form">
+                <input type="hidden" id="product-id">
+
                 <div class="mb-3">
                     <label for="product-name" class="form-label">Nome do Produto</label>
                     <input type="text" class="form-control" id="product-name" required>
@@ -45,6 +47,7 @@
                     </div>
                     <div id="image-previews" class="mt-3"></div>
                 </div>
+                
                 <button type="submit" class="btn btn-success">Salvar Produto</button>
                 <button type="button" id="cancel-edit-btn" class="btn btn-light">Cancelar</button>
             </form>
