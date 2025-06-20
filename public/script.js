@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const API_BASE_URL = `http://catalogo.smarthelp.tec.br`;
+    const API_BASE_URL = `https://catalogo.smarthelp.tec.br`;
 
     // --- Seletores e Variáveis Globais ---
     const showFormBtn = document.getElementById('show-form-btn');
@@ -16,31 +16,39 @@ document.addEventListener('DOMContentLoaded', () => {
     let existingImageNames = []; // Para gerenciar imagens na edição
 
     // --- Funções de Renderização e Carregamento ---
-    const renderizarProdutos = () => { /* ...código não modificado... */ 
-        productList.innerHTML = '';
-        if (produtos.length === 0) { productList.innerHTML = '<p class="text-muted">Nenhum produto cadastrado.</p>'; return; }
-        produtos.forEach(produto => {
-            const item = document.createElement('div');
-            item.className = 'list-group-item';
-            const imagensHTML = !produto.imagens || produto.imagens.length === 0 ? 'Nenhuma' : produto.imagens.map(img => `<a href="${API_BASE_URL}/uploads/${img}" target="_blank">${img}</a>`).join('<br>');
-            item.innerHTML = `
-                <div class="d-flex w-100 justify-content-between">
-                    <h5 class="mb-1">${produto.nome}</h5>
-                    <small>Data: ${produto.data}</small>
+const renderizarProdutos = () => {
+    productList.innerHTML = '';
+    if (produtos.length === 0) { 
+        productList.innerHTML = '<div class="text-center p-5"><i class="fas fa-box-open fa-3x text-muted"></i><p class="mt-3 text-muted">Nenhum produto cadastrado ainda.</p></div>'; 
+        return; 
+    }
+    produtos.forEach(produto => {
+        const item = document.createElement('div');
+        item.className = 'list-group-item p-4'; // Aumentamos o padding
+        const imagensHTML = !produto.imagens || produto.imagens.length === 0 ? 'Nenhuma' : produto.imagens.map(img => `<a href="${API_BASE_URL}/uploads/${img}" target="_blank">${img}</a>`).join('<br>');
+        
+        // Conteúdo com ícones adicionados aos botões
+        item.innerHTML = `
+            <div class="d-flex w-100 justify-content-between">
+                <h5 class="mb-1 fw-bold">${produto.nome}</h5>
+                <small class="text-muted">${produto.data}</small>
+            </div>
+            <p class="mb-2 text-muted"><span class="badge bg-light text-dark">${produto.categoria}</span></p>
+            <p class="mb-3">${produto.descricao}</p>
+            <small class="text-muted d-block mt-2"><b>Imagens Salvas:</b><br>${imagensHTML}</small>
+            <hr>
+            <div class="d-flex justify-content-between align-items-center">
+                <small><b>URL Destino:</b> <a href="${produto.url_destino}" target="_blank" class="text-primary">${produto.url_destino}</a></small>
+                <div class="text-end">
+                    <button class="btn btn-primary btn-sm send-btn" data-id="${produto.id}" title="Enviar para Destino"><i class="fas fa-paper-plane"></i></button>
+                    <button class="btn btn-warning btn-sm edit-btn" data-id="${produto.id}" title="Editar"><i class="fas fa-pencil-alt"></i></button>
+                    <button class="btn btn-danger btn-sm delete-btn" data-id="${produto.id}" title="Excluir"><i class="fas fa-trash"></i></button>
                 </div>
-                <p class="mb-1">${produto.descricao}</p>
-                <small class="text-muted d-block"><b>Categoria:</b> ${produto.categoria}</small>
-                <small class="text-muted d-block"><b>URL Destino:</b> <a href="${produto.url_destino}" target="_blank">${produto.url_destino}</a></small>
-                <small class="text-muted d-block mt-2"><b>Imagens:</b><br>${imagensHTML}</small>
-                <div class="mt-3">
-                    <button class="btn btn-primary btn-sm send-btn" data-id="${produto.id}">Enviar para Destino</button>
-                    <button class="btn btn-warning btn-sm edit-btn" data-id="${produto.id}">Editar</button>
-                    <button class="btn btn-danger btn-sm delete-btn" data-id="${produto.id}">Excluir</button>
-                </div>
-            `;
-            productList.appendChild(item);
-        });
-    };
+            </div>
+        `;
+        productList.appendChild(item);
+    });
+};
     const carregarProdutosDoServidor = async () => { try { const response = await fetch(`${API_BASE_URL}/api/produtos`); if (!response.ok) throw new Error('Falha ao carregar.'); produtos = await response.json(); renderizarProdutos(); } catch (error) { console.error(error); productList.innerHTML = `<p class="text-danger">Erro ao conectar.</p>`; } };
     const renderizarTodasAsPreviews = () => {
         imagePreviews.innerHTML = '';

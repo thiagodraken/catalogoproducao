@@ -1,55 +1,87 @@
-/* Centraliza o botão principal e adiciona margem */
-.text-center {
-    text-align: center;
+/* --- TEMA MODERNO E VARIÁVEIS DE COR --- */
+:root {
+    --cor-primaria: #0d6efd;
+    --cor-sucesso: #198754;
+    --cor-alerta: #ffc107;
+    --cor-perigo: #dc3545;
+    --cor-fundo: #f8f9fa;
+    --cor-texto: #212529;
+    --cor-borda: #dee2e6;
+    --sombra-suave: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+    --fonte-principal: 'Poppins', sans-serif;
 }
 
-/* Espaçamento entre os botões de ação na lista */
-.list-group-item .btn {
-    margin-left: 5px;
+body {
+    font-family: var(--fonte-principal);
+    background-color: var(--cor-fundo);
+    color: var(--cor-texto);
+    line-height: 1.6;
 }
 
-/* Feedback visual para o status da API */
-#api-status.success {
-    color: green;
-    font-weight: bold;
+/* --- ESTILOS GERAIS E MELHORIAS --- */
+.container {
+    max-width: 960px;
 }
 
-#api-status.error {
-    color: red;
-    font-weight: bold;
+.card {
+    border: none;
+    border-radius: 0.75rem;
 }
 
-/* Estilo da área de Drag and Drop */
+.btn {
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: all 0.2s ease-in-out;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.form-control {
+    border-radius: 0.5rem;
+}
+
+.form-control:focus {
+    box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.25);
+    border-color: var(--cor-primaria);
+}
+
+/* --- ESTILOS DOS COMPONENTES ESPECÍFICOS --- */
+#product-list .list-group-item {
+    margin-bottom: 1rem;
+    border-radius: 0.75rem;
+    border: 1px solid var(--cor-borda);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transition: box-shadow 0.2s ease-in-out;
+}
+
+#product-list .list-group-item:hover {
+    box-shadow: var(--sombra-suave);
+}
+
 .drop-zone {
-    border: 2px dashed #ccc;
-    border-radius: 10px;
+    border: 2px dashed var(--cor-borda);
+    border-radius: 0.75rem;
     padding: 40px;
     text-align: center;
-    color: #aaa;
+    color: #6c757d;
     cursor: pointer;
     transition: background-color 0.2s, border-color 0.2s;
 }
 
 .drop-zone:hover {
-    background-color: #f9f9f9;
-    border-color: #999;
+    background-color: #e9ecef;
+    border-color: var(--cor-primaria);
 }
 
-/* Estilo quando um arquivo está sendo arrastado sobre a área */
-.drop-zone--over {
-    border-style: solid;
-    border-color: #0d6efd; /* Azul do Bootstrap */
-    background-color: #e9f5ff;
-}
-
-/* Container para as pré-visualizações */
 #image-previews {
     display: flex;
     flex-wrap: wrap;
     gap: 15px;
 }
 
-/* Estilo de cada imagem de pré-visualização */
 .preview-item {
     position: relative;
     width: 100px;
@@ -60,25 +92,29 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
-    border-radius: 5px;
-    border: 1px solid #ddd;
+    border-radius: 0.5rem;
+    border: 1px solid var(--cor-borda);
 }
 
-/* Botão para remover a imagem da pré-visualização */
 .preview-remove-btn {
     position: absolute;
-    top: -5px;
-    right: -5px;
-    width: 20px;
-    height: 20px;
-    background-color: rgba(0, 0, 0, 0.7);
+    top: -8px;
+    right: -8px;
+    width: 24px;
+    height: 24px;
+    background-color: var(--cor-perigo);
     color: white;
-    border: none;
+    border: 2px solid white;
     border-radius: 50%;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 12px;
+    font-size: 14px;
     line-height: 1;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s;
+}
+.preview-remove-btn:hover {
+    transform: scale(1.1);
 }
