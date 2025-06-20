@@ -172,3 +172,5 @@ Pronto! Sua aplicação deve estar no ar e acessível através de https://seu_do
 Thiago Draken - GitHub
 📄 Licença
 Este projeto é de código aberto. Sinta-se à vontade para usar e modificar.
+
+OBS: Para a versão com login, verifique a branchreadme: https://github.com/thiagodraken/catalogoproducao/tree/versão-com-login
