@@ -1,35 +1,44 @@
-# Catálogo de Produtos - Full Stack
+# Catálogo de Produtos - Aplicação Full Stack com Autenticação
 
 ![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)
 ![Express.js](https://img.shields.io/badge/Express.js-000000?style=for-the-badge&logo=express&logoColor=white)
+![JWT](https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white)
 ![Nginx](https://img.shields.io/badge/Nginx-009639?style=for-the-badge&logo=nginx&logoColor=white)
 ![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
 
-Um sistema web simples para gerenciamento de um catálogo de produtos. A aplicação permite criar, visualizar e excluir produtos, além de fazer o upload de imagens e enviar os dados de um produto específico para uma API externa através de um proxy no back-end para contornar restrições de CORS.
+Uma aplicação web full-stack para gerenciamento de um catálogo de produtos, protegida por um sistema de autenticação baseado em JSON Web Tokens (JWT). A interface foi modernizada para uma experiência de usuário mais agradável e profissional.
 
 ## 🚀 Demo Ao Vivo
 
 A aplicação está em produção e pode ser acessada em:
 **[https://catalogo.smarthelp.tec.br](https://catalogo.smarthelp.tec.br)**
 
+*(Use as credenciais definidas no seu ambiente para fazer login)*
+
 ## ✨ Funcionalidades
 
-* **Gerenciamento de Produtos:** Adicionar, editar (preenchimento do formulário) e excluir produtos.
-* **Upload de Imagens:** Suporte para upload de múltiplas imagens por produto.
-* **Envio para API Externa:** Um botão "Enviar para Destino" para cada produto, que aciona uma chamada `POST` para uma URL de destino configurável.
-* **Proxy de Back-End:** As chamadas para a API externa são feitas através do back-end da aplicação para resolver problemas de CORS de forma robusta.
-* **Persistência de Dados:** As informações dos produtos são salvas em um arquivo `database.json` no servidor, e as imagens na pasta `uploads/`.
+* **Sistema de Autenticação:** Acesso à aplicação protegido por login e senha.
+* **Gerenciamento de Sessão com JWT:** O back-end gera um token JWT na autenticação, que é usado para proteger todas as rotas da API.
+* **CRUD de Produtos:** Funcionalidades completas para Criar, Ler, Atualizar e Excluir produtos.
+* **Upload de Múltiplas Imagens:** Interface de "arrastar e soltar" para upload de imagens, com pré-visualização.
+* **Galeria de Imagens Lightbox:** Visualização elegante das imagens do produto em uma galeria interativa (usando GLightbox).
+* **Proxy para API Externa:** Botão "Enviar para Destino" que utiliza o back-end como um proxy para contornar restrições de CORS ao se comunicar com APIs de terceiros.
+* **Interface Moderna:** Tema visual customizado, tipografia moderna (Google Fonts) e ícones (Font Awesome) para uma melhor experiência de usuário.
+* **Persistência de Dados:** Informações salvas em um arquivo `database.json` e imagens na pasta `uploads/`.
 
 ## 🛠️ Tecnologias Utilizadas
 
 #### **Front-End:**
 * HTML5
-* CSS3 (com Bootstrap 5)
+* CSS3 (Bootstrap 5)
 * JavaScript (ES6+)
+* GLightbox (Galeria de Imagens)
 
 #### **Back-End e Servidor:**
 * **Ambiente de Execução:** Node.js
 * **Framework:** Express.js
+* **Autenticação:** JSON Web Token (`jsonwebtoken`)
+* **Gerenciamento de Segredos:** `dotenv`
 * **Upload de Arquivos:** Multer
 * **Chamadas HTTP (Proxy):** Axios
 * **Servidor Web e Proxy Reverso:** Nginx
@@ -39,61 +48,81 @@ A aplicação está em produção e pode ser acessada em:
 
 ## 📂 Estrutura do Projeto
 
-/catalogo-producao/
+/catalogoproducao/
 |
 |-- public/                # Contém os arquivos do Front-End
-|   |-- index.html
+|   |-- index.html         # O catálogo principal
+|   |-- login.html         # A página de login
 |   |-- style.css
-|   -- script.js | |-- uploads/ # Onde as imagens são salvas pelo back-end | |-- database.json # Arquivo usado como banco de dados | |-- server.js # O servidor back-end (API e Proxy) | |-- package.json # Definições e dependências do projeto Node.js |-- README.md              # Este arquivo
+|   |-- script.js          # JS do catálogo
+|   -- login.js # JS da página de login | |-- uploads/ # Imagens salvas (criada pelo back-end) | |-- .env # Arquivo com as variáveis de ambiente (NÃO ENVIAR PARA O GITHUB) |-- .gitignore # Para ignorar arquivos como .env e node_modules |-- database.json # "Banco de dados" (criado pelo back-end) |-- server.js # O servidor back-end-- package.json           # Definições e dependências do projeto
 
 
-## ⚙️ Guia de Instalação e Deploy em Servidor Linux (Ubuntu 24)
+## ⚙️ Guia de Deploy em Servidor Linux (Ubuntu 24)
 
-Este guia descreve o processo para colocar uma cópia deste projeto em produção do zero.
+Este guia descreve o processo para colocar esta versão da aplicação (com login) em produção.
 
 ### **Pré-requisitos:**
 1.  Um servidor com Ubuntu 24 (como uma instância AWS EC2).
-2.  Acesso ao servidor via SSH.
-3.  Um nome de domínio configurado para apontar para o IP público do seu servidor.
+2.  Um nome de domínio apontando para o IP público do seu servidor (registro DNS do tipo `A`).
 
-### **Passo 1: Preparar o Ambiente do Servidor**
+### **Passo 1: Preparar o Servidor**
+Instale todas as ferramentas essenciais.
 
 ```bash
-# Atualizar os pacotes do sistema
+# 1. Atualizar o sistema
 sudo apt update && sudo apt upgrade -y
 
-# Instalar o Git para clonar o repositório
-sudo apt install git -y
+# 2. Instalar Git, Nginx
+sudo apt install git nginx -y
 
-# Instalar o nvm (Node Version Manager)
+# 3. Instalar nvm, Node.js e PM2
 curl -o- [https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh](https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh) | bash
 source ~/.bashrc
-
-# Instalar a versão LTS do Node.js
 nvm install --lts
-
-# Instalar o PM2 globalmente para gerenciar a aplicação
 npm install pm2 -g
 
-# Instalar o Nginx
-sudo apt install nginx -y
+# 4. Instalar Certbot para SSL
+sudo snap install --classic certbot
+sudo ln -s /snap/bin/certbot /usr/bin/certbot
 Passo 2: Clonar e Configurar o Projeto
 Bash
 
-# Clone este repositório
+# Clone o repositório
 git clone [https://github.com/thiagodraken/catalogoproducao.git](https://github.com/thiagodraken/catalogoproducao.git)
 
 # Entre na pasta do projeto
 cd catalogoproducao
 
-# Instale as dependências do back-end (Express, Axios, etc.)
+# Se você estiver usando uma branch específica para esta versão, troque para ela
+# Exemplo: git checkout branch-com-login
+
+# Instale as dependências do back-end
 npm install
-Passo 3: Configurar o Nginx e o Certificado SSL
+Passo 3: Configuração das Variáveis de Ambiente
+Crie o arquivo .env para armazenar suas credenciais.
+
 Bash
 
-# Crie um novo arquivo de configuração para o Nginx
+# Crie o arquivo .env
+nano .env
+Cole o seguinte conteúdo, personalizando as credenciais e o segredo:
+
+# Credenciais de Acesso
+ADMIN_USER="admin"
+ADMIN_PASS="senhaforte123"
+
+# Chave secreta para assinar os tokens JWT
+JWT_SECRET="SEU_SEGREDO_SUPER_COMPLEXO_AQUI_12345"
+Importante: Adicione o arquivo .env ao seu .gitignore para nunca enviá-lo ao GitHub.
+
+Passo 4: Configurar Nginx e SSL
+Crie o arquivo de configuração do Nginx.
+
+Bash
+
 sudo nano /etc/nginx/sites-available/catalogo-app
-Cole o seguinte conteúdo no arquivo, substituindo seu_dominio.com pelo seu domínio real:
+Use a configuração abaixo, substituindo seu_dominio.com pelo seu domínio.
 
 Nginx
 
@@ -102,56 +131,41 @@ server {
     server_name seu_dominio.com;
 
     root /home/ubuntu/catalogoproducao/public; 
-    index index.html;
+    index index.html login.html;
 
     location / {
-        try_files $uri $uri/ =404;
+        try_files $uri $uri/ /login.html;
     }
     
     location /uploads {
         alias /home/ubuntu/catalogoproducao/uploads;
-        expires 30d;
-        add_header Cache-Control "public";
     }
 
     location /api {
         proxy_pass http://localhost:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
         proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
+        # ... outros cabeçalhos de proxy ...
     }
 }
-Salve e feche o arquivo. Agora, ative a configuração e instale o SSL.
+Ative a configuração e gere o certificado SSL:
 
 Bash
 
-# Ative o site e remova o site padrão
 sudo ln -s /etc/nginx/sites-available/catalogo-app /etc/nginx/sites-enabled/
 sudo rm /etc/nginx/sites-enabled/default
-
-# Instale o Certbot para o SSL
-sudo snap install --classic certbot
-sudo ln -s /snap/bin/certbot /usr/bin/certbot
-
-# Rode o Certbot para obter e instalar o certificado (siga as instruções)
-# Substitua 'seu_dominio.com' pelo seu domínio
-sudo certbot --nginx -d seu_dominio.com
-Passo 4: Configurar o Front-End
-Edite o script.js para apontar para o seu próprio domínio.
+sudo certbot --nginx -d seu_dominio.com # Siga as instruções
+Passo 5: Configurar e Iniciar a Aplicação
+Edite o script.js para usar seu domínio.
 
 Bash
 
-# Edite o script
 nano ~/catalogoproducao/public/script.js
-Altere a primeira linha, substituindo o domínio de exemplo pelo seu:
+Altere a variável API_BASE_URL para o seu domínio com https://:
 
 JavaScript
 
 const API_BASE_URL = `https://seu_dominio.com`;
-Passo 5: Iniciar a Aplicação
-Use o PM2 para iniciar o servidor back-end e garantir que ele continue rodando.
+Finalmente, inicie a aplicação com o PM2:
 
 Bash
 
@@ -160,15 +174,11 @@ cd ~/catalogoproducao
 
 # Inicie a aplicação
 pm2 start server.js --name catalogo-app
+# 1. Testar a configuração para garantir que não há erros de sintaxe
+sudo nginx -t
+# 2. Se o teste retornar "successful", reinicie o Nginx
+sudo systemctl start ou restart nginx
 
-# Salve o estado do PM2 para que a aplicação reinicie com o servidor
+# Salve o estado para reiniciar com o servidor
 pm2 save
-Passo 6 (Específico para AWS EC2): Liberar Portas
-Se estiver na AWS, lembre-se de ir ao seu Security Group e liberar o tráfego de entrada para HTTP (porta 80) e HTTPS (porta 443).
-
-Pronto! Sua aplicação deve estar no ar e acessível através de https://seu_dominio.com.
-
-👨‍💻 Autor
-Thiago Draken - GitHub
-📄 Licença
-Este projeto é de código aberto. Sinta-se à vontade para usar e modificar.
+Sua aplicação estará no ar e acessível em https://seu_dominio.com.
