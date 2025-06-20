@@ -174,6 +174,10 @@ cd ~/catalogoproducao
 
 # Inicie a aplicação
 pm2 start server.js --name catalogo-app
+# 1. Testar a configuração para garantir que não há erros de sintaxe
+sudo nginx -t
+# 2. Se o teste retornar "successful", reinicie o Nginx
+sudo systemctl start ou restart nginx
 
 # Salve o estado para reiniciar com o servidor
 pm2 save
