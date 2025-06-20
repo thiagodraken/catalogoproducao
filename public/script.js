@@ -1,6 +1,24 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // --- GUARDIÃO DE AUTENTICAÇÃO ---
+    const authToken = localStorage.getItem('authToken');
+    if (!authToken) {
+        window.location.href = '/login.html';
+        return;
+    }
+
     const API_BASE_URL = `https://catalogo.smarthelp.tec.br`;
 
+    // --- Cabeçalhos de Autenticação para o fetch ---
+    const getAuthHeaders = (isFormData = false) => {
+        const headers = {
+            'Authorization': `Bearer ${authToken}`
+        };
+        if (!isFormData) {
+            headers['Content-Type'] = 'application/json';
+        }
+        return headers;
+    };
+    
     // --- Seletores e Variáveis Globais ---
     const showFormBtn = document.getElementById('show-form-btn');
     const productFormContainer = document.getElementById('product-form-container');
@@ -13,113 +31,103 @@ document.addEventListener('DOMContentLoaded', () => {
     const imagePreviews = document.getElementById('image-previews');
     let produtos = [];
     let selectedFiles = [];
-    let existingImageNames = []; // Para gerenciar imagens na edição
+    let existingImageNames = [];
 
-    // --- Funções de Renderização e Carregamento ---
-const renderizarProdutos = () => {
-    productList.innerHTML = '';
-    if (produtos.length === 0) { 
-        productList.innerHTML = '<div class="text-center p-5"><i class="fas fa-box-open fa-3x text-muted"></i><p class="mt-3 text-muted">Nenhum produto cadastrado ainda.</p></div>'; 
-        return; 
+    // Adiciona um botão de logout ao cabeçalho da página
+    const header = document.querySelector('header');
+    if (header) {
+        const logoutButton = document.createElement('button');
+        logoutButton.id = 'logout-btn';
+        logoutButton.className = 'btn btn-outline-secondary btn-sm';
+        logoutButton.innerHTML = '<i class="fas fa-sign-out-alt me-2"></i>Sair';
+        logoutButton.style.position = 'absolute';
+        logoutButton.style.top = '20px';
+        logoutButton.style.right = '20px';
+        document.body.appendChild(logoutButton);
+
+        logoutButton.addEventListener('click', () => {
+            localStorage.removeItem('authToken');
+            window.location.href = '/login.html';
+        });
     }
-    produtos.forEach(produto => {
-        const item = document.createElement('div');
-        item.className = 'list-group-item p-4'; // Aumentamos o padding
-        const imagensHTML = !produto.imagens || produto.imagens.length === 0 ? 'Nenhuma' : produto.imagens.map(img => `<a href="${API_BASE_URL}/uploads/${img}" target="_blank">${img}</a>`).join('<br>');
-        
-        // Conteúdo com ícones adicionados aos botões
-        item.innerHTML = `
-            <div class="d-flex w-100 justify-content-between">
-                <h5 class="mb-1 fw-bold">${produto.nome}</h5>
-                <small class="text-muted">${produto.data}</small>
-            </div>
-            <p class="mb-2 text-muted"><span class="badge bg-light text-dark">${produto.categoria}</span></p>
-            <p class="mb-3">${produto.descricao}</p>
-            <small class="text-muted d-block mt-2"><b>Imagens Salvas:</b><br>${imagensHTML}</small>
-            <hr>
-            <div class="d-flex justify-content-between align-items-center">
-                <small><b>URL Destino:</b> <a href="${produto.url_destino}" target="_blank" class="text-primary">${produto.url_destino}</a></small>
-                <div class="text-end">
-                    <button class="btn btn-primary btn-sm send-btn" data-id="${produto.id}" title="Enviar para Destino"><i class="fas fa-paper-plane"></i></button>
-                    <button class="btn btn-warning btn-sm edit-btn" data-id="${produto.id}" title="Editar"><i class="fas fa-pencil-alt"></i></button>
-                    <button class="btn btn-danger btn-sm delete-btn" data-id="${produto.id}" title="Excluir"><i class="fas fa-trash"></i></button>
+
+    const lightbox = GLightbox({ selector: '.glightbox' });
+
+    // --- Funções Principais ---
+    const renderizarProdutos = () => {
+        productList.innerHTML = '';
+        if (produtos.length === 0) { productList.innerHTML = '<div class="text-center p-5"><i class="fas fa-box-open fa-3x text-muted"></i><p class="mt-3 text-muted">Nenhum produto cadastrado.</p></div>'; return; }
+        produtos.forEach(produto => {
+            const item = document.createElement('div');
+            item.className = 'list-group-item p-4';
+            const imagensHTML = !produto.imagens || produto.imagens.length === 0 ? 'Nenhuma' : produto.imagens.map(img => `<a href="${API_BASE_URL}/uploads/${img}" class="glightbox" data-gallery="product-${produto.id}"><img src="${API_BASE_URL}/uploads/${img}" class="img-thumbnail" width="60" height="60" style="object-fit: cover;"></a>`).join(' ');
+            item.innerHTML = `
+                <div class="d-flex w-100 justify-content-between">
+                    <h5 class="mb-1 fw-bold">${produto.nome}</h5>
+                    <small class="text-muted">${produto.data}</small>
                 </div>
-            </div>
-        `;
-        productList.appendChild(item);
-    });
-};
-    const carregarProdutosDoServidor = async () => { try { const response = await fetch(`${API_BASE_URL}/api/produtos`); if (!response.ok) throw new Error('Falha ao carregar.'); produtos = await response.json(); renderizarProdutos(); } catch (error) { console.error(error); productList.innerHTML = `<p class="text-danger">Erro ao conectar.</p>`; } };
+                <p class="mb-2 text-muted"><span class="badge bg-light text-dark">${produto.categoria}</span></p>
+                <p class="mb-3">${produto.descricao}</p>
+                <small class="text-muted d-block mt-2"><b>Imagens Salvas:</b><br><div class="d-flex flex-wrap gap-2 mt-2">${imagensHTML}</div></small>
+                <hr>
+                <div class="d-flex justify-content-between align-items-center">
+                    <small><b>URL Destino:</b> <a href="${produto.url_destino}" target="_blank" class="text-primary">${produto.url_destino}</a></small>
+                    <div class="text-end">
+                        <button class="btn btn-primary btn-sm send-btn" data-id="${produto.id}" title="Enviar para Destino"><i class="fas fa-paper-plane"></i></button>
+                        <button class="btn btn-warning btn-sm edit-btn" data-id="${produto.id}" title="Editar"><i class="fas fa-pencil-alt text-white"></i></button>
+                        <button class="btn btn-danger btn-sm delete-btn" data-id="${produto.id}" title="Excluir"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+            `;
+            productList.appendChild(item);
+        });
+        lightbox.reload();
+    };
+
+    const carregarProdutosDoServidor = async () => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/produtos`, { headers: getAuthHeaders() });
+            if (response.status === 401 || response.status === 403) { localStorage.removeItem('authToken'); window.location.href = '/login.html'; return; }
+            if (!response.ok) throw new Error('Falha ao carregar produtos.');
+            produtos = await response.json();
+            renderizarProdutos();
+        } catch (error) { console.error(error); productList.innerHTML = `<p class="text-danger">Erro ao conectar.</p>`; }
+    };
+
     const renderizarTodasAsPreviews = () => {
         imagePreviews.innerHTML = '';
-        existingImageNames.forEach((name, index) => {
-            const previewItem = document.createElement('div'); previewItem.className = 'preview-item';
-            previewItem.innerHTML = `<div class="preview-image d-flex align-items-center justify-content-center bg-light text-dark p-1" style="font-size: 10px; text-align: center; overflow: hidden;">${name}</div><button type="button" class="preview-remove-btn" data-index="${index}" data-type="existing">&times;</button>`;
-            imagePreviews.appendChild(previewItem);
-        });
-        selectedFiles.forEach((file, index) => {
-            const reader = new FileReader();
-            reader.onload = () => { const previewItem = document.createElement('div'); previewItem.className = 'preview-item'; previewItem.innerHTML = `<img src="${reader.result}" alt="${file.name}" class="preview-image"><button type="button" class="preview-remove-btn" data-index="${index}" data-type="new">&times;</button>`; imagePreviews.appendChild(previewItem); };
-            reader.readAsDataURL(file);
-        });
+        existingImageNames.forEach((name, index) => { const previewItem = document.createElement('div'); previewItem.className = 'preview-item'; const imageUrl = `${API_BASE_URL}/uploads/${name}`; previewItem.innerHTML = `<a href="${imageUrl}" class="glightbox" data-gallery="form-preview"><img src="${imageUrl}" class="preview-image"></a><button type="button" class="preview-remove-btn" data-index="${index}" data-type="existing" title="Remover">&times;</button>`; imagePreviews.appendChild(previewItem); });
+        selectedFiles.forEach((file, index) => { const reader = new FileReader(); reader.onload = () => { const previewItem = document.createElement('div'); previewItem.className = 'preview-item'; previewItem.innerHTML = `<a href="${reader.result}" class="glightbox" data-gallery="form-preview"><img src="${reader.result}" alt="${file.name}" class="preview-image"></a><button type="button" class="preview-remove-btn" data-index="${index}" data-type="new" title="Remover">&times;</button>`; imagePreviews.appendChild(previewItem); }; reader.readAsDataURL(file); });
+        lightbox.reload();
     };
     const handleFiles = (files) => { selectedFiles.push(...Array.from(files)); renderizarTodasAsPreviews(); };
-    const resetarFormulario = () => {
-        productForm.reset();
-        document.getElementById('product-id').value = '';
-        selectedFiles = [];
-        existingImageNames = []; // Limpa também as imagens existentes
-        imagePreviews.innerHTML = '';
-        productFormContainer.style.display = 'none';
-        showFormBtn.style.display = 'block';
-    };
+    const resetarFormulario = () => { productForm.reset(); document.getElementById('product-id').value = ''; selectedFiles = []; existingImageNames = []; imagePreviews.innerHTML = ''; productFormContainer.style.display = 'none'; showFormBtn.style.display = 'block'; };
 
     // --- Event Listeners ---
     showFormBtn.addEventListener('click', () => { resetarFormulario(); formTitle.textContent = 'Adicionar Novo Produto'; productFormContainer.style.display = 'block'; showFormBtn.style.display = 'none'; });
     cancelEditBtn.addEventListener('click', resetarFormulario);
-    // ... (Listeners de Drag/Drop e File Input) ...
-    dropZone.addEventListener('click', () => fileInput.click()); dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drop-zone--over'); }); dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drop-zone--over')); dropZone.addEventListener('drop', (e) => { e.preventDefault(); dropZone.classList.remove('drop-zone--over'); handleFiles(e.dataTransfer.files); }); fileInput.addEventListener('change', () => handleFiles(fileInput.files));
-    imagePreviews.addEventListener('click', (e) => {
-        if (e.target.classList.contains('preview-remove-btn')) {
-            const index = parseInt(e.target.dataset.index, 10);
-            const type = e.target.dataset.type;
-            if (type === 'new') { selectedFiles.splice(index, 1); } 
-            else if (type === 'existing') { existingImageNames.splice(index, 1); }
-            renderizarTodasAsPreviews();
-        }
-    });
+    dropZone.addEventListener('click', () => fileInput.click()); dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drop-zone--over'); }); dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drop-zone--over')); dropZone.addEventListener('drop', (e) => { e.preventDefault(); dropZone.classList.remove('drop-zone--over'); handleFiles(e.dataTransfer.files); });
+    fileInput.addEventListener('change', () => handleFiles(fileInput.files));
+    imagePreviews.addEventListener('click', (e) => { if (e.target.classList.contains('preview-remove-btn')) { const index = parseInt(e.target.dataset.index, 10); const type = e.target.dataset.type; if (type === 'new') { selectedFiles.splice(index, 1); } else if (type === 'existing') { existingImageNames.splice(index, 1); } renderizarTodasAsPreviews(); } });
 
-    // Listener de submissão do formulário (AGORA INTELIGENTE)
     productForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const produtoId = document.getElementById('product-id').value;
-        
         const formData = new FormData();
         formData.append('nome', document.getElementById('product-name').value);
         formData.append('categoria', document.getElementById('product-category').value);
         formData.append('descricao', document.getElementById('product-description').value);
         formData.append('data', document.getElementById('product-date').value);
         formData.append('url_destino', document.getElementById('product-destination-url').value);
-        
-        // Lógica para determinar a URL e o método (POST para criar, PUT para editar)
         let url = `${API_BASE_URL}/api/produtos`;
         let method = 'POST';
-
-        if (produtoId) {
-            // Modo Edição
-            url = `${API_BASE_URL}/api/produtos/${produtoId}`;
-            method = 'PUT';
-            formData.append('existingImages', existingImageNames.join(','));
-        }
-        
+        if (produtoId) { url = `${API_BASE_URL}/api/produtos/${produtoId}`; method = 'PUT'; formData.append('existingImages', existingImageNames.join(',')); }
         selectedFiles.forEach(file => { formData.append('imagens', file); });
-        
         const submitButton = e.target.querySelector('button[type="submit"]');
         submitButton.textContent = 'Salvando...';
         submitButton.disabled = true;
-
         try {
-            const response = await fetch(url, { method: method, body: formData });
+            const response = await fetch(url, { method: method, body: formData, headers: getAuthHeaders(true) });
             if (!response.ok) throw new Error((await response.json()).message || 'Erro no servidor');
             alert(`Produto ${produtoId ? 'atualizado' : 'salvo'} com sucesso!`);
             resetarFormulario();
@@ -132,20 +140,39 @@ const renderizarProdutos = () => {
         }
     });
 
-    // Listener da lista (AGORA COM LÓGICA DE EDITAR CORRETA)
     productList.addEventListener('click', async (e) => {
-        const id = e.target.dataset.id;
+        const targetButton = e.target.closest('button');
+        if (!targetButton) return;
+        const id = targetButton.dataset.id;
         if (!id) return;
-
-        // ... (Lógica de Delete e Send não mudou) ...
-        if (e.target.classList.contains('delete-btn')) { if (!confirm('Tem certeza?')) return; try { const response = await fetch(`${API_BASE_URL}/api/produtos/${id}`, { method: 'DELETE' }); if (!response.ok) throw new Error((await response.json()).message || 'Erro ao excluir'); await carregarProdutosDoServidor(); } catch (error) { alert(`Erro: ${error.message}`); } }
-        if (e.target.classList.contains('send-btn')) { const sendButton = e.target; sendButton.textContent = 'Enviando...'; sendButton.disabled = true; try { const response = await fetch(`${API_BASE_URL}/api/enviar-destino/${id}`, { method: 'POST' }); if (!response.ok) { const errorData = await response.json(); throw new Error(errorData.message || 'Back-end falhou.'); } sendButton.textContent = 'Enviado!'; sendButton.classList.add('btn-success'); } catch(error) { alert(`Falha: ${error.message}`); sendButton.textContent = 'Falhou!'; sendButton.classList.add('btn-danger'); } }
-        
-        if (e.target.classList.contains('edit-btn')) {
+        if (targetButton.classList.contains('delete-btn')) {
+            if (!confirm('Tem certeza?')) return;
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/produtos/${id}`, { method: 'DELETE', headers: getAuthHeaders() });
+                if (!response.ok) throw new Error((await response.json()).message || 'Erro ao excluir');
+                await carregarProdutosDoServidor();
+            } catch (error) { alert(`Erro: ${error.message}`); }
+        }
+        if (targetButton.classList.contains('send-btn')) {
+            targetButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            targetButton.disabled = true;
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/enviar-destino/${id}`, { method: 'POST', headers: getAuthHeaders() });
+                if (!response.ok) { const errorData = await response.json(); throw new Error(errorData.message || 'Back-end falhou.'); }
+                targetButton.innerHTML = '<i class="fas fa-check"></i>';
+                targetButton.classList.remove('btn-primary');
+                targetButton.classList.add('btn-success');
+            } catch (error) {
+                alert(`Falha: ${error.message}`);
+                targetButton.innerHTML = '<i class="fas fa-times"></i>';
+                targetButton.classList.remove('btn-primary');
+                targetButton.classList.add('btn-danger');
+            }
+        }
+        if (targetButton.classList.contains('edit-btn')) {
             const produto = produtos.find(p => p.id === id);
             if (!produto) return;
-            
-            resetarFormulario(); // Limpa tudo antes de preencher
+            resetarFormulario();
             formTitle.textContent = 'Editar Produto';
             document.getElementById('product-id').value = produto.id;
             document.getElementById('product-name').value = produto.nome;
@@ -153,16 +180,13 @@ const renderizarProdutos = () => {
             document.getElementById('product-description').value = produto.descricao;
             document.getElementById('product-date').value = produto.data;
             document.getElementById('product-destination-url').value = produto.url_destino;
-            
-            // Popula e renderiza as imagens existentes para que possam ser removidas
             existingImageNames = produto.imagens ? [...produto.imagens] : [];
             renderizarTodasAsPreviews();
-            
             productFormContainer.style.display = 'block';
             showFormBtn.style.display = 'none';
             window.scrollTo(0, 0);
         }
     });
-
+    
     carregarProdutosDoServidor();
 });
