@@ -35,7 +35,13 @@
             <div class="card-body p-4">
                 <h3 id="form-title" class="card-title mb-4">Adicionar Produto</h3>
                 <form id="product-form">
-                    <input type="hidden" id="product-id">
+                    <input type="hidden" id="editing-product-original-id">
+                    
+                    <div class="mb-3">
+                        <label for="product-id-manual" class="form-label">ID do Produto (Manual)</label>
+                        <input type="text" class="form-control" id="product-id-manual" required>
+                    </div>
+
                     <div class="row">
                         <div class="col-md-6 mb-3"><label for="product-name" class="form-label">Nome do Produto</label><input type="text" class="form-control" id="product-name" required></div>
                         <div class="col-md-6 mb-3"><label for="product-category" class="form-label">Categoria</label><input type="text" class="form-control" id="product-category" required></div>

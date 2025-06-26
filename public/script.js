@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const API_BASE_URL = `https://catalogo.smarthelp.tec.br`;
 
     // --- Cabeçalhos de Autenticação para o fetch ---
-    const getAuthHeaders = (isFormData = false) => {
+    const getAuthHeaders = (isFormData = false ) => {
         const headers = {
             'Authorization': `Bearer ${authToken}`
         };
@@ -63,7 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const imagensHTML = !produto.imagens || produto.imagens.length === 0 ? 'Nenhuma' : produto.imagens.map(img => `<a href="${API_BASE_URL}/uploads/${img}" class="glightbox" data-gallery="product-${produto.id}"><img src="${API_BASE_URL}/uploads/${img}" class="img-thumbnail" width="60" height="60" style="object-fit: cover;"></a>`).join(' ');
             item.innerHTML = `
                 <div class="d-flex w-100 justify-content-between">
-                    <h5 class="mb-1 fw-bold">${produto.nome}</h5>
+                    <h5 class="mb-1 fw-bold">${produto.nome} <span class="badge bg-light text-dark fw-normal">ID: ${produto.id}</span></h5>
                     <small class="text-muted">${produto.data}</small>
                 </div>
                 <p class="mb-2 text-muted"><span class="badge bg-light text-dark">${produto.categoria}</span></p>
@@ -101,35 +101,68 @@ document.addEventListener('DOMContentLoaded', () => {
         lightbox.reload();
     };
     const handleFiles = (files) => { selectedFiles.push(...Array.from(files)); renderizarTodasAsPreviews(); };
-    const resetarFormulario = () => { productForm.reset(); document.getElementById('product-id').value = ''; selectedFiles = []; existingImageNames = []; imagePreviews.innerHTML = ''; productFormContainer.style.display = 'none'; showFormBtn.style.display = 'block'; };
+    
+    const resetarFormulario = () => {
+        console.log('Chamando resetarFormulario...');
+        productForm.reset();
+        // INÍCIO DO AJUSTE E DEPURACÃO
+        const editingProductIdElement = document.getElementById('editing-product-original-id');
+        console.log('Elemento editing-product-original-id:', editingProductIdElement); // Log para depuração
+        if (editingProductIdElement) {
+            editingProductIdElement.value = '';
+            console.log('Valor de editing-product-original-id resetado para vazio.');
+        } else {
+            console.error('ERRO: editing-product-original-id NÃO ENCONTRADO no DOM ao resetar formulário.'); // Log de erro
+        }
+        // FIM DO AJUSTE E DEPURACÃO
+        selectedFiles = [];
+        existingImageNames = [];
+        imagePreviews.innerHTML = '';
+        productFormContainer.style.display = 'none';
+        showFormBtn.style.display = 'block';
+    };
 
     // --- Event Listeners ---
     showFormBtn.addEventListener('click', () => { resetarFormulario(); formTitle.textContent = 'Adicionar Novo Produto'; productFormContainer.style.display = 'block'; showFormBtn.style.display = 'none'; });
     cancelEditBtn.addEventListener('click', resetarFormulario);
-    dropZone.addEventListener('click', () => fileInput.click()); dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drop-zone--over'); }); dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drop-zone--over')); dropZone.addEventListener('drop', (e) => { e.preventDefault(); dropZone.classList.remove('drop-zone--over'); handleFiles(e.dataTransfer.files); });
+    dropZone.addEventListener('click', () => fileInput.click());
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drop-zone--over'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drop-zone--over'));
+    dropZone.addEventListener('drop', (e) => { e.preventDefault(); dropZone.classList.remove('drop-zone--over'); handleFiles(e.dataTransfer.files); });
     fileInput.addEventListener('change', () => handleFiles(fileInput.files));
     imagePreviews.addEventListener('click', (e) => { if (e.target.classList.contains('preview-remove-btn')) { const index = parseInt(e.target.dataset.index, 10); const type = e.target.dataset.type; if (type === 'new') { selectedFiles.splice(index, 1); } else if (type === 'existing') { existingImageNames.splice(index, 1); } renderizarTodasAsPreviews(); } });
 
     productForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const produtoId = document.getElementById('product-id').value;
+        const originalId = document.getElementById('editing-product-original-id').value;
         const formData = new FormData();
+        
+        formData.append('id', document.getElementById('product-id-manual').value);
         formData.append('nome', document.getElementById('product-name').value);
         formData.append('categoria', document.getElementById('product-category').value);
         formData.append('descricao', document.getElementById('product-description').value);
         formData.append('data', document.getElementById('product-date').value);
         formData.append('url_destino', document.getElementById('product-destination-url').value);
+        
         let url = `${API_BASE_URL}/api/produtos`;
         let method = 'POST';
-        if (produtoId) { url = `${API_BASE_URL}/api/produtos/${produtoId}`; method = 'PUT'; formData.append('existingImages', existingImageNames.join(',')); }
+
+        if (originalId) {
+            url = `${API_BASE_URL}/api/produtos/${originalId}`;
+            method = 'PUT';
+            formData.append('existingImages', existingImageNames.join(','));
+        }
+        
         selectedFiles.forEach(file => { formData.append('imagens', file); });
+        
         const submitButton = e.target.querySelector('button[type="submit"]');
         submitButton.textContent = 'Salvando...';
         submitButton.disabled = true;
+
         try {
             const response = await fetch(url, { method: method, body: formData, headers: getAuthHeaders(true) });
             if (!response.ok) throw new Error((await response.json()).message || 'Erro no servidor');
-            alert(`Produto ${produtoId ? 'atualizado' : 'salvo'} com sucesso!`);
+            alert(`Produto ${originalId ? 'atualizado' : 'salvo'} com sucesso!`);
             resetarFormulario();
             await carregarProdutosDoServidor();
         } catch (error) {
@@ -145,14 +178,16 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!targetButton) return;
         const id = targetButton.dataset.id;
         if (!id) return;
+        
         if (targetButton.classList.contains('delete-btn')) {
-            if (!confirm('Tem certeza?')) return;
+            if (!confirm('Tem certeza que deseja excluir?')) return;
             try {
                 const response = await fetch(`${API_BASE_URL}/api/produtos/${id}`, { method: 'DELETE', headers: getAuthHeaders() });
                 if (!response.ok) throw new Error((await response.json()).message || 'Erro ao excluir');
                 await carregarProdutosDoServidor();
             } catch (error) { alert(`Erro: ${error.message}`); }
         }
+
         if (targetButton.classList.contains('send-btn')) {
             targetButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
             targetButton.disabled = true;
@@ -169,18 +204,46 @@ document.addEventListener('DOMContentLoaded', () => {
                 targetButton.classList.add('btn-danger');
             }
         }
+        
         if (targetButton.classList.contains('edit-btn')) {
+            console.log('Botão de edição clicado para o ID:', id); // Log para depuração
             const produto = produtos.find(p => p.id === id);
-            if (!produto) return;
-            resetarFormulario();
+            if (!produto) {
+                console.error('Produto não encontrado para edição com ID:', id); // Log de erro
+                return;
+            }
+            console.log('Produto encontrado para edição:', produto); // Log para depuração
+            
+            resetarFormulario(); // Chamada que pode estar causando o problema
+            
             formTitle.textContent = 'Editar Produto';
-            document.getElementById('product-id').value = produto.id;
+            
+            // INÍCIO DA DEPURACÃO ADICIONAL PARA PREENCHIMENTO
+            const editingProductOriginalIdElement = document.getElementById('editing-product-original-id');
+            const productIdManualElement = document.getElementById('product-id-manual');
+
+            if (editingProductOriginalIdElement) {
+                editingProductOriginalIdElement.value = produto.id;
+                console.log('editing-product-original-id preenchido com:', editingProductOriginalIdElement.value);
+            } else {
+                console.error('ERRO: editing-product-original-id NÃO ENCONTRADO ao tentar preencher para edição.');
+            }
+
+            if (productIdManualElement) {
+                productIdManualElement.value = produto.id;
+                console.log('product-id-manual preenchido com:', productIdManualElement.value);
+            } else {
+                console.error('ERRO: product-id-manual NÃO ENCONTRADO ao tentar preencher para edição.');
+            }
+            // FIM DA DEPURACÃO ADICIONAL PARA PREENCHIMENTO
+            
             document.getElementById('product-name').value = produto.nome;
             document.getElementById('product-category').value = produto.categoria;
             document.getElementById('product-description').value = produto.descricao;
             document.getElementById('product-date').value = produto.data;
             document.getElementById('product-destination-url').value = produto.url_destino;
             existingImageNames = produto.imagens ? [...produto.imagens] : [];
+            
             renderizarTodasAsPreviews();
             productFormContainer.style.display = 'block';
             showFormBtn.style.display = 'none';
@@ -188,5 +251,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
+    // --- Inicialização ---
     carregarProdutosDoServidor();
 });
