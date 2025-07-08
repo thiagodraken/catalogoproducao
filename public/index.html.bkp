@@ -36,10 +36,12 @@
                 <h3 id="form-title" class="card-title mb-4">Adicionar Produto</h3>
                 <form id="product-form">
                     <input type="hidden" id="editing-product-original-id">
+                    
                     <div class="mb-3">
-                        <label for="product-id-manual" class="form-label">ID do Produto (Referência)</label>
+                        <label for="product-id-manual" class="form-label">ID do Produto (Manual)</label>
                         <input type="text" class="form-control" id="product-id-manual" required>
                     </div>
+
                     <div class="row">
                         <div class="col-md-6 mb-3"><label for="product-name" class="form-label">Nome do Produto</label><input type="text" class="form-control" id="product-name" required></div>
                         <div class="col-md-6 mb-3"><label for="product-category" class="form-label">Categoria</label><input type="text" class="form-control" id="product-category" required></div>
@@ -47,24 +49,15 @@
                     <div class="mb-3"><label for="product-description" class="form-label">Descrição</label><textarea class="form-control" id="product-description" rows="3"></textarea></div>
                     <div class="row">
                         <div class="col-md-6 mb-3"><label for="product-date" class="form-label">Data</label><input type="date" class="form-control" id="product-date" required></div>
-                        <div class="col-md-6 mb-3"><label for="product-destination-url" class="form-label">URL de Destino (Webhook)</label><input type="url" class="form-control" id="product-destination-url" required></div>
+                        <div class="col-md-6 mb-3"><label for="product-destination-url" class="form-label">URL de Destino</label><input type="url" class="form-control" id="product-destination-url" required></div>
                     </div>
-                    <hr>
-                    <h5 class="mb-3">Integração Baserow</h5>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="baserow-table-id" class="form-label">ID da Tabela (Baserow)</label>
-                            <input type="text" class="form-control" id="baserow-table-id" placeholder="Ex: 573558">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="baserow-api-token" class="form-label">Token da API (Baserow)</label>
-                            <input type="password" class="form-control" id="baserow-api-token" placeholder="Cole seu token aqui">
-                        </div>
-                    </div>
-                    <hr>
                     <div class="mb-4">
                         <label class="form-label">Imagens do Produto</label>
-                        <div id="drop-zone" class="drop-zone"><i class="fas fa-cloud-upload-alt fa-2x text-muted mb-2"></i><br>Arraste e solte os arquivos aqui ou clique para selecionar.<input type="file" id="file-input" multiple hidden></div>
+                        <div id="drop-zone" class="drop-zone">
+                            <i class="fas fa-cloud-upload-alt fa-2x text-muted mb-2"></i><br>
+                            Arraste e solte os arquivos aqui ou clique para selecionar.
+                            <input type="file" id="file-input" multiple hidden>
+                        </div>
                         <div id="image-previews" class="mt-3"></div>
                     </div>
                     <div class="d-flex justify-content-end">
@@ -75,14 +68,6 @@
             </div>
         </div>
 
-        <div class="mb-4">
-            <label for="search-input" class="form-label fs-5">Buscar Produto</label>
-            <div class="input-group">
-                <span class="input-group-text"><i class="fas fa-search"></i></span>
-                <input type="search" id="search-input" class="form-control form-control-lg" placeholder="Digite o nome ou ID do produto...">
-            </div>
-        </div>
-        
         <div id="product-list" class="list-group">
             </div>
 
