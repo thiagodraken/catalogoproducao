@@ -1,3 +1,4 @@
+
 document.addEventListener('DOMContentLoaded', () => {
     // --- GUARDIÃO DE AUTENTICAÇÃO ---
     const authToken = localStorage.getItem('authToken');
@@ -26,9 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const formTitle = document.getElementById('form-title');
     const cancelEditBtn = document.getElementById('cancel-edit-btn');
     const productList = document.getElementById('product-list');
-    const dropZone = document.getElementById('drop-zone');
-    const fileInput = document.getElementById('file-input');
-    const imagePreviews = document.getElementById('image-previews');
+    const searchInput = document.getElementById('search-input');
     let produtos = [];
     let selectedFiles = [];
     let existingImageNames = [];
@@ -54,18 +53,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const lightbox = GLightbox({ selector: '.glightbox' });
 
     // --- Funções Principais ---
-    const renderizarProdutos = () => {
+    const renderizarProdutos = (listaDeProdutos = produtos) => {
         productList.innerHTML = '';
-        if (produtos.length === 0) { productList.innerHTML = '<div class="text-center p-5"><i class="fas fa-box-open fa-3x text-muted"></i><p class="mt-3 text-muted">Nenhum produto cadastrado.</p></div>'; return; }
-        produtos.forEach(produto => {
+        if (listaDeProdutos.length === 0) {
+            productList.innerHTML = '<div class="text-center p-5"><i class="fas fa-search-minus fa-3x text-muted"></i><p class="mt-3 text-muted">Nenhum produto encontrado.</p></div>';
+            return;
+        }
+        
+        listaDeProdutos.forEach(produto => {
             const item = document.createElement('div');
             item.className = 'list-group-item p-4';
             const imagensHTML = !produto.imagens || produto.imagens.length === 0 ? 'Nenhuma' : produto.imagens.map(img => `<a href="${API_BASE_URL}/uploads/${img}" class="glightbox" data-gallery="product-${produto.id}"><img src="${API_BASE_URL}/uploads/${img}" class="img-thumbnail" width="60" height="60" style="object-fit: cover;"></a>`).join(' ');
             
-            // Lógica para habilitar/desabilitar o botão Baserow
             const isBaserowConfigured = produto.baserow_table_id && produto.baserow_api_token;
             const baserowButtonDisabled = isBaserowConfigured ? '' : 'disabled';
             const baserowButtonTitle = isBaserowConfigured ? 'Enviar para Baserow' : 'Configure o Baserow para este produto';
+
+            const isWhatsappConfigured = produto.whatsapp_group_id && produto.zapi_instance_id && produto.zapi_token;
+            const whatsappButtonDisabled = isWhatsappConfigured ? '' : 'disabled';
+            const whatsappButtonTitle = isWhatsappConfigured ? 'Enviar para Grupo WhatsApp' : 'Configure a Z-api para este produto';
 
             item.innerHTML = `
                 <div class="d-flex w-100 justify-content-between">
@@ -79,6 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="d-flex justify-content-between align-items-center">
                     <small><b>URL Destino:</b> <a href="${produto.url_destino}" target="_blank" class="text-primary">${produto.url_destino || 'N/A'}</a></small>
                     <div class="text-end">
+                        <button class="btn btn-info btn-sm whatsapp-btn" data-id="${produto.id}" title="${whatsappButtonTitle}" ${whatsappButtonDisabled}><i class="fab fa-whatsapp"></i></button>
                         <button class="btn btn-success btn-sm baserow-btn" data-id="${produto.id}" title="${baserowButtonTitle}" ${baserowButtonDisabled}><i class="fas fa-database"></i></button>
                         <button class="btn btn-primary btn-sm send-btn" data-id="${produto.id}" title="Enviar para Destino"><i class="fas fa-paper-plane"></i></button>
                         <button class="btn btn-warning btn-sm edit-btn" data-id="${produto.id}" title="Editar"><i class="fas fa-pencil-alt text-white"></i></button>
@@ -98,15 +105,20 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!response.ok) throw new Error('Falha ao carregar produtos.');
             produtos = await response.json();
             renderizarProdutos();
-        } catch (error) { console.error(error); productList.innerHTML = `<p class="text-danger">Erro ao conectar.</p>`; }
+        } catch (error) {
+            console.error(error);
+            productList.innerHTML = `<p class="text-danger">Erro ao conectar ao servidor.</p>`;
+        }
     };
-
+    
     const renderizarTodasAsPreviews = () => {
+        const imagePreviews = document.getElementById('image-previews');
         imagePreviews.innerHTML = '';
         existingImageNames.forEach((name, index) => { const previewItem = document.createElement('div'); previewItem.className = 'preview-item'; const imageUrl = `${API_BASE_URL}/uploads/${name}`; previewItem.innerHTML = `<a href="${imageUrl}" class="glightbox" data-gallery="form-preview"><img src="${imageUrl}" class="preview-image"></a><button type="button" class="preview-remove-btn" data-index="${index}" data-type="existing" title="Remover">&times;</button>`; imagePreviews.appendChild(previewItem); });
         selectedFiles.forEach((file, index) => { const reader = new FileReader(); reader.onload = () => { const previewItem = document.createElement('div'); previewItem.className = 'preview-item'; previewItem.innerHTML = `<a href="${reader.result}" class="glightbox" data-gallery="form-preview"><img src="${reader.result}" alt="${file.name}" class="preview-image"></a><button type="button" class="preview-remove-btn" data-index="${index}" data-type="new" title="Remover">&times;</button>`; imagePreviews.appendChild(previewItem); }; reader.readAsDataURL(file); });
         lightbox.reload();
     };
+    
     const handleFiles = (files) => { selectedFiles.push(...Array.from(files)); renderizarTodasAsPreviews(); };
     
     const resetarFormulario = () => {
@@ -114,7 +126,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('editing-product-original-id').value = '';
         selectedFiles = [];
         existingImageNames = [];
-        imagePreviews.innerHTML = '';
+        document.getElementById('image-previews').innerHTML = '';
         productFormContainer.style.display = 'none';
         showFormBtn.style.display = 'block';
     };
@@ -122,18 +134,29 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Event Listeners ---
     showFormBtn.addEventListener('click', () => { resetarFormulario(); formTitle.textContent = 'Adicionar Novo Produto'; productFormContainer.style.display = 'block'; showFormBtn.style.display = 'none'; });
     cancelEditBtn.addEventListener('click', resetarFormulario);
+    
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
     dropZone.addEventListener('click', () => fileInput.click());
     dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drop-zone--over'); });
     dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drop-zone--over'));
     dropZone.addEventListener('drop', (e) => { e.preventDefault(); dropZone.classList.remove('drop-zone--over'); handleFiles(e.dataTransfer.files); });
     fileInput.addEventListener('change', () => handleFiles(fileInput.files));
-    imagePreviews.addEventListener('click', (e) => { if (e.target.classList.contains('preview-remove-btn')) { const index = parseInt(e.target.dataset.index, 10); const type = e.target.dataset.type; if (type === 'new') { selectedFiles.splice(index, 1); } else if (type === 'existing') { existingImageNames.splice(index, 1); } renderizarTodasAsPreviews(); } });
-
+    
+    document.getElementById('image-previews').addEventListener('click', (e) => {
+        if (e.target.classList.contains('preview-remove-btn')) {
+            const index = parseInt(e.target.dataset.index, 10);
+            const type = e.target.dataset.type;
+            if (type === 'new') { selectedFiles.splice(index, 1); } 
+            else if (type === 'existing') { existingImageNames.splice(index, 1); }
+            renderizarTodasAsPreviews();
+        }
+    });
+    
     productForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const originalId = document.getElementById('editing-product-original-id').value;
         const formData = new FormData();
-        
         formData.append('id', document.getElementById('product-id-manual').value);
         formData.append('nome', document.getElementById('product-name').value);
         formData.append('categoria', document.getElementById('product-category').value);
@@ -142,22 +165,22 @@ document.addEventListener('DOMContentLoaded', () => {
         formData.append('url_destino', document.getElementById('product-destination-url').value);
         formData.append('baserow_table_id', document.getElementById('baserow-table-id').value);
         formData.append('baserow_api_token', document.getElementById('baserow-api-token').value);
+        formData.append('whatsapp_group_id', document.getElementById('whatsapp-group-id').value);
+        formData.append('zapi_instance_id', document.getElementById('zapi-instance-id').value);
+        formData.append('zapi_token', document.getElementById('zapi-token').value);
         
         let url = `${API_BASE_URL}/api/produtos`;
         let method = 'POST';
-
         if (originalId) {
             url = `${API_BASE_URL}/api/produtos/${originalId}`;
             method = 'PUT';
             formData.append('existingImages', existingImageNames.join(','));
         }
-        
         selectedFiles.forEach(file => { formData.append('imagens', file); });
         
         const submitButton = e.target.querySelector('button[type="submit"]');
         submitButton.textContent = 'Salvando...';
         submitButton.disabled = true;
-
         try {
             const response = await fetch(url, { method: method, body: formData, headers: getAuthHeaders(true) });
             if (!response.ok) throw new Error((await response.json()).message || 'Erro no servidor');
@@ -171,13 +194,13 @@ document.addEventListener('DOMContentLoaded', () => {
             submitButton.disabled = false;
         }
     });
-
+    
     productList.addEventListener('click', async (e) => {
         const targetButton = e.target.closest('button');
         if (!targetButton) return;
         const id = targetButton.dataset.id;
         if (!id) return;
-        
+
         if (targetButton.classList.contains('delete-btn')) {
             if (!confirm('Tem certeza que deseja excluir?')) return;
             try {
@@ -186,7 +209,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 await carregarProdutosDoServidor();
             } catch (error) { alert(`Erro: ${error.message}`); }
         }
-
+        
         if (targetButton.classList.contains('send-btn')) {
             targetButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
             targetButton.disabled = true;
@@ -220,25 +243,41 @@ document.addEventListener('DOMContentLoaded', () => {
                 targetButton.title = 'Enviar para Baserow';
             }
         }
-
+        
+        if (targetButton.classList.contains('whatsapp-btn')) {
+            targetButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            targetButton.disabled = true;
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/send-whatsapp/${id}`, { method: 'POST', headers: getAuthHeaders() });
+                if (!response.ok) { const errorData = await response.json(); throw new Error(errorData.message || 'Back-end falhou.'); }
+                targetButton.innerHTML = '<i class="fas fa-check"></i>';
+                targetButton.classList.remove('btn-info');
+                targetButton.classList.add('btn-success');
+            } catch (error) {
+                alert(`Falha no envio para WhatsApp: ${error.message}`);
+                targetButton.innerHTML = '<i class="fab fa-whatsapp"></i>';
+                targetButton.disabled = false;
+            }
+        }
+        
         if (targetButton.classList.contains('edit-btn')) {
             const produto = produtos.find(p => p.id === id);
             if (!produto) return;
             resetarFormulario();
             formTitle.textContent = 'Editar Produto';
-            
             document.getElementById('editing-product-original-id').value = produto.id;
             document.getElementById('product-id-manual').value = produto.id;
-            
             document.getElementById('product-name').value = produto.nome;
             document.getElementById('product-category').value = produto.categoria;
             document.getElementById('product-description').value = produto.descricao;
             document.getElementById('product-date').value = produto.data;
-            document.getElementById('product-destination-url').value = produto.url_destino;
+            document.getElementById('product-destination-url').value = produto.url_destino || '';
             document.getElementById('baserow-table-id').value = produto.baserow_table_id || '';
             document.getElementById('baserow-api-token').value = produto.baserow_api_token || '';
+            document.getElementById('whatsapp-group-id').value = produto.whatsapp_group_id || '';
+            document.getElementById('zapi-instance-id').value = produto.zapi_instance_id || '';
+            document.getElementById('zapi-token').value = produto.zapi_token || '';
             existingImageNames = produto.imagens ? [...produto.imagens] : [];
-            
             renderizarTodasAsPreviews();
             productFormContainer.style.display = 'block';
             showFormBtn.style.display = 'none';
@@ -246,6 +285,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
+    // LÓGICA DA BUSCA
+    searchInput.addEventListener('input', (e) => {
+        const termoBuscado = e.target.value.toLowerCase().trim();
+        const produtosFiltrados = produtos.filter(produto => {
+            const nome = produto.nome.toLowerCase();
+            const id = (produto.id || '').toString().toLowerCase();
+            return nome.includes(termoBuscado) || id.includes(termoBuscado);
+        });
+        renderizarProdutos(produtosFiltrados);
+    });
+
     // --- Inicialização ---
     carregarProdutosDoServidor();
 });
