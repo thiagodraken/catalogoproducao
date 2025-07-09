@@ -168,6 +168,7 @@ document.addEventListener('DOMContentLoaded', () => {
         formData.append('whatsapp_group_id', document.getElementById('whatsapp-group-id').value);
         formData.append('zapi_instance_id', document.getElementById('zapi-instance-id').value);
         formData.append('zapi_token', document.getElementById('zapi-token').value);
+        formData.append('zapi_client_token', document.getElementById('zapi-client-token').value);
         
         let url = `${API_BASE_URL}/api/produtos`;
         let method = 'POST';
@@ -277,6 +278,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('whatsapp-group-id').value = produto.whatsapp_group_id || '';
             document.getElementById('zapi-instance-id').value = produto.zapi_instance_id || '';
             document.getElementById('zapi-token').value = produto.zapi_token || '';
+            document.getElementById('zapi-client-token').value = produto.zapi_client_token || '';
             existingImageNames = produto.imagens ? [...produto.imagens] : [];
             renderizarTodasAsPreviews();
             productFormContainer.style.display = 'block';

@@ -206,54 +206,52 @@ app.post('/api/send-to-baserow/:id', protegerRotas, async (req, res) => {
     }
 });
 
-// Rota de WhatsApp com resposta imediata e envio em segundo plano
-app.post('/api/send-whatsapp/:id', protegerRotas, (req, res) => {
-    const produtos = readDatabase();
-    const produto = produtos.find(p => p.id === req.params.id);
-    if (!produto) { return res.status(404).json({ message: 'Produto não encontrado.' }); }
-    if (!produto.whatsapp_group_id || !produto.zapi_instance_id || !produto.zapi_token || !produto.zapi_client_token) {
-        return res.status(400).json({ message: 'Este produto não possui a configuração completa da Z-api.' });
-    }
+// Rota de Proxy para o Z-api com envio sequencial de texto e imagens
+app.post('/api/send-whatsapp/:id', protegerRotas, async (req, res) => {
+    try {
+        const produtos = readDatabase();
+        const produto = produtos.find(p => p.id === req.params.id);
+        if (!produto) { return res.status(404).json({ message: 'Produto não encontrado.' }); }
+        if (!produto.whatsapp_group_id || !produto.zapi_instance_id || !produto.zapi_token || !produto.zapi_client_token) {
+            return res.status(400).json({ message: 'Este produto não possui a configuração completa da Z-api.' });
+        }
 
-    // 1. Responde IMEDIATAMENTE para o front-end com status 202 (Accepted)
-    res.status(202).json({ message: 'Envio para o WhatsApp foi iniciado em segundo plano.' });
+        const { zapi_instance_id: instanceId, zapi_token: token, whatsapp_group_id: groupId, nome: nomeProduto, descricao } = produto;
+        const appUrl = process.env.APP_URL;
+        const headers = { 'Client-Token': produto.zapi_client_token };
+        
+        const textUrl = `https://api.z-api.io/instances/${instanceId}/token/${token}/send-text`;
+        const imageUrl = `https://api.z-api.io/instances/${instanceId}/token/${token}/send-image`;
 
-    // 2. Executa a tarefa demorada em segundo plano
-    const enviarMensagens = async () => {
-        try {
-            const { zapi_instance_id: instanceId, zapi_token: token, whatsapp_group_id: groupId, nome: nomeProduto, descricao } = produto;
-            const appUrl = process.env.APP_URL;
-            const headers = { 'Client-Token': produto.zapi_client_token };
-            const textUrl = `https://api.z-api.io/instances/${instanceId}/token/${token}/send-text`;
-            const imageUrl = `https://api.z-api.io/instances/${instanceId}/token/${token}/send-image`;
+        // 1. Envia a descrição do produto como uma mensagem de texto primeiro.
+        if (descricao) {
+            console.log(`[ZAPI] Enviando descrição para o grupo: ${groupId}`);
+            await axios.post(textUrl, { phone: groupId, message: descricao }, { headers });
+            // Adiciona um pequeno delay para a mensagem de texto chegar antes das imagens
+            await new Promise(resolve => setTimeout(resolve, 1500));
+        }
 
-            // Envia a descrição primeiro, se houver
-            if (descricao) {
-                console.log(`[ZAPI em Fila] Enviando descrição para o grupo: ${groupId}`);
-                const textoCompleto = `*${nomeProduto}*\n\n${descricao}`;
-                await axios.post(textUrl, { phone: groupId, message: textoCompleto }, { headers });
+        // 2. Envia cada imagem, uma por uma
+        if (produto.imagens && produto.imagens.length > 0) {
+            for (const img of produto.imagens) {
+                const imagemUrlCompleta = `${appUrl}/uploads/${img}`;
+                console.log(`[ZAPI] Enviando imagem ${imagemUrlCompleta} para o grupo: ${groupId}`);
+                
+                await axios.post(imageUrl, {
+                    phone: groupId,
+                    image: imagemUrlCompleta
+                }, { headers });
+                
+                // Delay de 1.5 segundos entre cada imagem para garantir a ordem e evitar bloqueios
                 await new Promise(resolve => setTimeout(resolve, 1500));
             }
-            
-            // Envia as imagens em sequência
-            if (produto.imagens && produto.imagens.length > 0) {
-                for (const img of produto.imagens) {
-                    const imagemUrlCompleta = `${appUrl}/uploads/${img}`;
-                    console.log(`[ZAPI em Fila] Enviando imagem ${imagemUrlCompleta} para o grupo: ${groupId}`);
-                    await axios.post(imageUrl, {
-                        phone: groupId,
-                        image: imagemUrlCompleta
-                    }, { headers });
-                    await new Promise(resolve => setTimeout(resolve, 1500));
-                }
-            }
-            console.log(`[ZAPI em Fila] Envio para o produto ${produto.id} concluído.`);
-        } catch (error) {
-            console.error(`[ZAPI em Fila] Erro ao enviar para o produto ${req.params.id}:`, error.response ? error.response.data : error.message);
         }
-    };
-
-    enviarMensagens(); // Dispara a função assíncrona
+        
+        res.status(200).json({ message: 'Mensagem e imagens enviadas para o grupo do WhatsApp com sucesso!' });
+    } catch (error) {
+        console.error("[ZAPI] Erro:", error.response ? error.response.data : error.message);
+        res.status(500).json({ message: 'Falha ao enviar mensagem para o WhatsApp.', error: error.response ? error.response.data : error.message });
+    }
 });
 
 app.listen(PORT, () => {
