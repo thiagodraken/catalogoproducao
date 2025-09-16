@@ -8,10 +8,10 @@
 
 Uma aplicação web full-stack para gerenciamento de um catálogo de produtos, protegida por um sistema de autenticação baseado em JSON Web Tokens (JWT). A interface foi modernizada para uma experiência de usuário mais agradável e profissional.
 
-## 🚀 Demo Ao Vivo
+## 🚀 Demo Ao Vivo (Pode ser solicitado, atualmente tem um servidor em estado parado na Amazon.)
 
 A aplicação está em produção e pode ser acessada em:
-**[https://catalogo.smarthelp.tec.br](https://catalogo.smarthelp.tec.br)**
+**[https://catalogo.smarthelp.tec.br](https://catalogo.smarthelp.tec.br)** 
 
 *(Use as credenciais definidas no seu ambiente para fazer login)*
 
