@@ -187,6 +187,6 @@ Se estiver na AWS, lembre-se de ir ao seu Security Group e liberar o tráfego de
 Pronto! Sua aplicação deve estar no ar e acessível através de https://seu_dominio.com.
 
 👨‍💻 Autor
-Thiago Draken - GitHub
+Thiago Vital - GitHub
 📄 Licença
 Este projeto é de código aberto. Sinta-se à vontade para usar e modificar.
